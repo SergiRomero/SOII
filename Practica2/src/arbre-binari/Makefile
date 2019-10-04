@@ -1,13 +1,13 @@
 # This is the makefile that generates the executable
 
 # Files to compile
-FILES_C = main.c red-black-tree.c
+FILES_C = red-black-tree.c main.c
 
 # Exectuable to generate
 TARGET = main
 
 # Compilation options
-CFLAGS = -Wall -Werror -O
+CFLAGS = -Wall -O -g -Werror
 
 # Linker options 
 LFLAGS = -lm

@@ -47,13 +47,13 @@ void free_node_data(node_data *data)
  *
  */
 
-int compare_key1_less_than_key2(int key1, int key2)
+int compare_key1_less_than_key2(char *key1, char *key2)
 {
     int rc;
 
     rc = 0;
 
-    if (key1 < key2)
+    if (strcasecmp(key1, key2) < 0)
         rc = 1;
 
     return rc;
@@ -66,13 +66,13 @@ int compare_key1_less_than_key2(int key1, int key2)
  *
  */
 
-int compare_key1_equal_to_key2(int key1, int key2)
+int compare_key1_equal_to_key2(char *key1, char *key2)
 {
     int rc;
 
     rc = 0;
 
-    if (key1 == key2)
+    if (strcasecmp(key1, key2) == 0)
         rc = 1;
 
     return rc;
@@ -104,7 +104,7 @@ void init_tree(rb_tree *tree)
  *
  */
 
-node_data *find_node(rb_tree *tree, int key) {
+node_data *find_node(rb_tree *tree, char *key) {
 
     node *current = tree->root;
     while(current != NIL)
