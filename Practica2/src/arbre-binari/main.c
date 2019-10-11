@@ -99,14 +99,16 @@ int main(int argc, char **argv)
   fclose(fp);
   
   ct = 0;
-
+  
   fp = fopen("words", "r");
   while (fgets(word, MAXCHAR, fp))
   {
-    n_data = find_node(tree, word);
+      a = malloc(sizeof(char)*(strlen(word)));
+      strncpy(a, word, strlen(word) - 1);
+      n_data = find_node(tree, a);
     
     if (n_data) { 
-      printf("La paraula %s apareix %d cops a l'arbre.\n", word, n_data->num_times);
+      printf("La paraula %s apareix %d cops a l'arbre.\n", a, n_data->num_times);
       ct += n_data->num_times;
     }
   }
