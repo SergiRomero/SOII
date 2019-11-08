@@ -8,6 +8,7 @@
  *
  */
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +19,8 @@
 
 #define MAXVALUE 10
 #define MAXCHAR 100
+#define MAGIC_NUMBER 0x01234567
+
 
 /*Function that returns 1 if the character is a simbol*/
 int issimbol(char caracter){
@@ -96,43 +99,31 @@ int process_line(char *line, rb_tree *tree)
  *
  */
 
-int main(int argc, char **argv)
+int fillDictionary(rb_tree *tree, char *diccionari, char *baseDades)
 {
+    
+    //MIRAR SI ESTA LLENO Y VACIAR-LO
   int ct;
 
   FILE *fp, *fp2;
   int i, numFiles = 0;
   char word[MAXCHAR];
 
-  rb_tree *tree;
   node_data *n_data;
 
-  if (argc != 2)
-  {
-    printf("Usage: %s file\n", argv[0]);
-    exit(1);
-  }
-
-  fp = fopen("words", "r");
+  fp = fopen(diccionari, "r");
 
   if (!fp) {
     printf("Could not open dicctionary\n");
     exit(1);
   }
 
-  //maxnum = atoi(argv[1]);
-
-  printf("Test with red-black-tree\n");
-
-  /* Random seed */
-  srand(time(NULL));
-
-  /* Allocate memory for tree */
-  tree = (rb_tree *) malloc(sizeof(rb_tree));
-
-  /* Initialize the tree */
-  printf("Initialize tree\n");
-  init_tree(tree);
+    /* Random seed */
+    srand(time(NULL));
+    
+    init_tree(tree);
+  
+    
 
   char *a;
 
@@ -172,10 +163,10 @@ int main(int argc, char **argv)
 
     ct = 0;
     fclose(fp);
-
+    
     char line[MAXCHAR];
 
-    fp = fopen(argv[1], "r");
+    fp = fopen(baseDades, "r");
     if (!fp) {
         printf("Could not open file1\n");
         exit(1);
@@ -204,13 +195,119 @@ int main(int argc, char **argv)
 
     fclose(fp);
 
-    inOrder(tree->root);
+    //inOrder(tree->root);
   
-  /* Delete the tree */
-
-  //printf("Nombre total que vegades que s'ha accedit a l'arbre: %d\n", ct);
-  delete_tree(tree);
-  free(tree);
 
   return 0;
 }
+
+
+/*
+ * --------------------------------------------------------------------------------
+ *                          MENU
+ *-------------------------------------------------------------------------------- 
+ */
+
+int menu() 
+{
+    char str[5];
+    int opcio;
+
+    printf("\n\nMenu\n\n");
+    printf(" 1 - Creacio de l'arbre\n");
+    printf(" 2 - Emmagatzemar arbre a disc\n");
+    printf(" 3 - Llegir arbre de disc\n");
+    printf(" 4 - Consultar informacio de l'arbre\n");
+    printf(" 5 - Sortir\n\n");
+    printf("   Escull opcio: ");
+
+    fgets(str, 5, stdin);
+    opcio = atoi(str); 
+
+    return opcio;
+}
+
+
+int main(int argc, char **argv)
+{
+    char str1[MAXCHAR], str2[MAXCHAR];
+    int opcio;
+    rb_tree *tree;
+    
+    tree = (rb_tree *) malloc(sizeof(rb_tree));
+
+    if (argc != 1)
+        printf("Opcions de la linia de comandes ignorades\n");
+
+    do {
+        opcio = menu();
+        printf("\n\n");
+
+       /* Feu servir aquest codi com a pantilla */
+
+        switch (opcio) {
+            case 1:
+                printf("Fitxer de diccionari de paraules: ");
+                fgets(str1, MAXCHAR, stdin);
+                str1[strlen(str1)-1]=0;
+
+                printf("Fitxer de base de dades: ");
+                fgets(str2, MAXCHAR, stdin);
+                str2[strlen(str2)-1]=0;
+
+                fillDictionary(tree, str1, str2);
+
+                break;
+
+            case 2:
+                printf("Nom de fitxer en que es desara l'arbre: ");
+                fgets(str1, MAXCHAR, stdin);
+                str1[strlen(str1)-1]=0;
+
+                /* Falta codi */
+
+                break;
+
+            case 3:
+                printf("Nom del fitxer que conte l'arbre: ");
+                fgets(str1, MAXCHAR, stdin);
+                str1[strlen(str1)-1]=0;
+
+                /* Falta codi */
+
+                break;
+
+            case 4:
+                printf("Paraula a buscar o polsa enter per saber la paraula que apareix mes vegades: ");
+                fgets(str1, MAXCHAR, stdin);
+                str1[strlen(str1)-1]=0;
+
+                /* Falta codi */
+
+                break;
+
+            case 5:
+
+                /* Falta codi */
+
+                break;
+
+            default:
+                printf("Opcio no valida\n");
+
+        } /* switch */
+    }
+    while (opcio != 5);
+        
+    
+    delete_tree(tree);
+    free(tree);
+    
+    
+    return 0;
+}
+
+
+
+
+
