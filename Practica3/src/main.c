@@ -176,7 +176,7 @@ rb_tree *fillDictionary(char *diccionari, char *baseDades)
         numFiles = atoi(word);
     }
 
-    for(i=0; i < numFiles; i++){
+    for(i=0; i < numFiles; i++) {
         fgets(word, MAXCHAR, fp);
         word[strlen(word)-1]= 0;
         fp2=fopen(word, "r");
@@ -184,19 +184,17 @@ rb_tree *fillDictionary(char *diccionari, char *baseDades)
         if (!fp2) {
             printf("Could not open file2\n");
             exit(1);
-
         }
-    while (fgets(line, MAXCHAR, fp2)){
-        ct += process_line(line, tree);
-    }
-    fclose(fp2);
+		while (fgets(line, MAXCHAR, fp2)){
+			ct += process_line(line, tree);
+		}
+		fclose(fp2);
     }
 
     fclose(fp);
 
     //inOrder(tree->root);
-  
-
+ 
   return tree;
   
 }
