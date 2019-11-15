@@ -275,6 +275,66 @@ rb_tree *loadTree(char *diccionari) {
     return tree;
 }
 
+/*
+ * -----------------------------------------------------
+ * 
+ *                   SAVE TREE
+ * 
+ * -----------------------------------------------------
+ */
+
+
+int saveTree(rb_tree *tree, char *diccionari) {
+    
+    FILE *fp;
+    int numNodes, magicNumber;
+    
+    //fwrite(&i, sizeof(int), 1, fp);
+    
+    fp = fopen(diccionari, "w");
+    if (!fp) {
+        printf("Could not open file\n");
+        exit(1);
+    }
+    
+    magicNumber = MAGIC_NUMBER;
+    fwrite(&magicNumber, sizeof(int), 1, fp);
+    
+    numNodes = 6; //FALTA CONTAR EL NUMERO DE NODOS Y ESCRIBIR-LO
+    fwrite(&numNodes, sizeof(int), 1, fp);
+    
+    save_tree_recursive(tree->root, fp);
+    
+    fclose(fp);
+    
+    return 0;
+}
+
+void saveNodeDataRecursive(node_data *x, FILE *fp) {
+
+    //RECORRIDO EN PROFUNDIDAD
+    if (x->right != NIL)
+        saveNodeDataRecursive(x->right, fp);
+
+    if (x->left != NIL)
+        saveNodeDataRecursive(x->left, fp);
+    
+    saveNodeData(x, fp);
+}
+
+void saveNodeData(node_data *x, FILE *fp){
+    
+    //DEFINE HOW WE SAVE DATA
+    int i;
+    
+    i = strlen(x->data->key);
+    fwrite(&i, sizeof(int), 1, fp);
+
+    fwrite(x->data->key, sizeof(char), i, fp);
+
+    i = x->data->num_times;
+    fwrite(&i, sizeof(int), 1, fp);    
+}
 
 /*
  * --------------------------------------------------------------------------------
@@ -350,7 +410,7 @@ int main(int argc, char **argv)
                 fgets(str1, MAXCHAR, stdin);
                 str1[strlen(str1)-1]=0;
 
-                /* Falta codi */
+                printf("LA FUNCION NO ESTA INSTANCIADA\n");
 
                 break;
 
