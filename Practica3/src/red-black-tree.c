@@ -37,6 +37,7 @@
 
 void free_node_data(node_data *data)
 {
+    free(data->key);
     free(data);
 }
 
@@ -153,8 +154,7 @@ void delete_tree_recursive(node *x)
 
     if (x->left != NIL)
         delete_tree_recursive(x->left);
-    
-    free(x->data->key);
+
     free_node_data(x->data);
     free(x);
 }

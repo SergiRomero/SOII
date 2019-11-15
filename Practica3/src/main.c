@@ -99,65 +99,64 @@ int process_line(char *line, rb_tree *tree)
  *
  */
 
-int fillDictionary(rb_tree *tree, char *diccionari, char *baseDades)
+rb_tree *fillDictionary(char *diccionari, char *baseDades)
 {
+    int ct;
+    rb_tree *tree;
+    FILE *fp, *fp2;
+    int i, numFiles = 0;
+    char word[MAXCHAR];
+
+    node_data *n_data;
     
-    //MIRAR SI ESTA LLENO Y VACIAR-LO
-  int ct;
+    tree = (rb_tree *) malloc(sizeof(rb_tree));
+    init_tree(tree);
 
-  FILE *fp, *fp2;
-  int i, numFiles = 0;
-  char word[MAXCHAR];
+    fp = fopen(diccionari, "r");
 
-  node_data *n_data;
-
-  fp = fopen(diccionari, "r");
-
-  if (!fp) {
-    printf("Could not open dicctionary\n");
-    exit(1);
-  }
+    if (!fp) {
+        printf("Could not open dicctionary\n");
+        exit(1);
+    }
 
     /* Random seed */
     srand(time(NULL));
-    
-    init_tree(tree);
-  
-    
 
-  char *a;
+    char *a;
 
-  printf("Read DICTIONARY\n");
-  while (fgets(word, MAXCHAR, fp)) { //POR CADA PALABRA DE DICCIONARI
+    printf("Read DICTIONARY\n");
+    while (fgets(word, MAXCHAR, fp)) { //POR CADA PALABRA DE DICCIONARI
 
-    /* Search if the key is in the tree */
-    n_data = find_node(tree, word);
+        /* Search if the key is in the tree */
+        n_data = find_node(tree, word);
 
-    if (n_data != NULL) {
-      //YA ESTA AÑADIDO
-    } else {
+        if (n_data != NULL) {
+        //YA ESTA AÑADIDO
+        } else {
 
-      /* If the key is not in the tree, allocate memory for the data
-       * and insert in the tree */
-      if (strlen(word) != 1){
-        a = malloc(sizeof(char)*(strlen(word)));
+        /* If the key is not in the tree, allocate memory for the data
+        * and insert in the tree */
+            if (strlen(word) != 1){
+                
+                //printf("NEW WORD\n");
+                a = malloc(sizeof(char)*(strlen(word)));
 
-        strncpy(a, word, strlen(word) - 1);
-        strcat(a, "\0");
+                strncpy(a, word, strlen(word));
+                a[strlen(word)-1]=0;
 
-        n_data = malloc(sizeof(node_data));
+                n_data = malloc(sizeof(node_data));
 
-        /* This is the key by which the node is indexed in the tree */
-        n_data->key = a;
+                /* This is the key by which the node is indexed in the tree */
+                n_data->key = a;
 
-        /* This is additional information that is stored in the tree */
-        n_data->num_times = 0;
+                /* This is additional information that is stored in the tree */
+                n_data->num_times = 0;
 
-        /* We insert the node in the tree */
-        insert_node(tree, n_data);
-      }
+                /* We insert the node in the tree */
+                insert_node(tree, n_data);
+            }
+        }
     }
-  }
 
   /* We now dump the information of the tree to screen */
 
@@ -198,7 +197,8 @@ int fillDictionary(rb_tree *tree, char *diccionari, char *baseDades)
     //inOrder(tree->root);
   
 
-  return 0;
+  return tree;
+  
 }
 
 
@@ -234,8 +234,8 @@ int main(int argc, char **argv)
     int opcio;
     rb_tree *tree;
     
-    tree = (rb_tree *) malloc(sizeof(rb_tree));
-
+    tree = NULL;
+    
     if (argc != 1)
         printf("Opcions de la linia de comandes ignorades\n");
 
@@ -247,6 +247,13 @@ int main(int argc, char **argv)
 
         switch (opcio) {
             case 1:
+                
+                if(tree) {
+                    printf("Free tree memory\n");
+                    delete_tree(tree);
+                    free(tree);
+                }
+                
                 printf("Fitxer de diccionari de paraules: ");
                 fgets(str1, MAXCHAR, stdin);
                 str1[strlen(str1)-1]=0;
@@ -255,11 +262,16 @@ int main(int argc, char **argv)
                 fgets(str2, MAXCHAR, stdin);
                 str2[strlen(str2)-1]=0;
 
-                fillDictionary(tree, str1, str2);
+                tree = fillDictionary(str1, str2);
 
                 break;
 
             case 2:
+                if(!tree) {
+                    printf("No hi ha cap arbrea memòria\n");
+                    break;
+                }
+                
                 printf("Nom de fitxer en que es desara l'arbre: ");
                 fgets(str1, MAXCHAR, stdin);
                 str1[strlen(str1)-1]=0;
@@ -269,6 +281,13 @@ int main(int argc, char **argv)
                 break;
 
             case 3:
+                if(tree) {
+                    printf("Free tree memory\n");
+                    delete_tree(tree);
+                    free(tree);
+                }
+                
+                
                 printf("Nom del fitxer que conte l'arbre: ");
                 fgets(str1, MAXCHAR, stdin);
                 str1[strlen(str1)-1]=0;
@@ -278,6 +297,9 @@ int main(int argc, char **argv)
                 break;
 
             case 4:
+                
+                inOrder(tree->root);
+                
                 printf("Paraula a buscar o polsa enter per saber la paraula que apareix mes vegades: ");
                 fgets(str1, MAXCHAR, stdin);
                 str1[strlen(str1)-1]=0;
@@ -287,9 +309,11 @@ int main(int argc, char **argv)
                 break;
 
             case 5:
-
-                /* Falta codi */
-
+                if(tree) {
+                    printf("Free tree memory\n");
+                    delete_tree(tree);
+                    free(tree);
+                }
                 break;
 
             default:
@@ -298,11 +322,6 @@ int main(int argc, char **argv)
         } /* switch */
     }
     while (opcio != 5);
-        
-    
-    delete_tree(tree);
-    free(tree);
-    
     
     return 0;
 }
