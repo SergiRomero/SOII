@@ -139,7 +139,7 @@ rb_tree *fillDictionary(char *diccionari, char *baseDades)
             if (strlen(word) != 1){
                 
                 //printf("NEW WORD\n");
-                a = malloc(sizeof(char)*(strlen(word)));
+                a = malloc(sizeof(char)*(strlen(word))); 
 
                 strncpy(a, word, strlen(word));
                 a[strlen(word)-1]=0;
@@ -199,6 +199,82 @@ rb_tree *fillDictionary(char *diccionari, char *baseDades)
 
   return tree;
   
+}
+
+
+/*
+ * ---------------------------------------------------------
+ * 
+ *              LOAD TREE
+ * 
+ * ---------------------------------------------------------
+ */
+
+rb_tree *loadTree(char *diccionari) {
+    
+    rb_tree *tree;
+    FILE *fp;
+    
+    node_data *n_data;
+    
+    int i, magic, numNodes, lenWord, numInstances;
+    char* word;
+    
+    
+    tree = (rb_tree *) malloc(sizeof(rb_tree));
+    init_tree(tree);
+    
+    fp = fopen(diccionari, "r");
+
+    if (!fp) {
+        printf("Could not open dicctionary\n");
+        exit(1);
+    }
+    
+    //COMPROVACIO MAGIC NUMBER
+    fread(&magic, sizeof(int), 1, fp);
+    if (magic != MAGIC_NUMBER){
+        printf("Wrong magic number\n");
+        exit(1);
+    }
+    
+    //COMPROVACIO NUM NODES
+    fread(&numNodes, sizeof(int), 1, fp);
+    if (numNodes <= 0){
+        printf("Empty tree\n");
+        exit(1);
+    }
+    
+    
+    for(i=0; i < numNodes; i++) {
+        
+        fread(&lenWord, sizeof(int), 1, fp);
+        if (lenWord <= 0){
+            printf("Wrong len word\n");
+            exit(1);
+        }
+        
+        word = malloc(sizeof(char)*(lenWord + 1)); //Cogemos espacio para el \0
+        fread(word, sizeof(char)*lenWord, 1, fp);
+        word[lenWord] = 0;
+        
+        fread(&numInstances, sizeof(int), 1, fp);
+        if (numInstances < 0){
+            printf("Negative word apearence\n");
+            free(word); //Zona de memoria inconexa con el arbol
+            exit(1);
+        }
+        
+        n_data = malloc(sizeof(node_data));
+
+        n_data->key = word;
+        n_data->num_times = numInstances;
+        insert_node(tree, n_data);
+    }
+    
+    fclose(fp);
+    
+    return tree;
 }
 
 
@@ -292,20 +368,22 @@ int main(int argc, char **argv)
                 fgets(str1, MAXCHAR, stdin);
                 str1[strlen(str1)-1]=0;
 
-                /* Falta codi */
+                tree = loadTree(str1);
 
                 break;
 
             case 4:
                 
-                inOrder(tree->root);
-                
                 printf("Paraula a buscar o polsa enter per saber la paraula que apareix mes vegades: ");
                 fgets(str1, MAXCHAR, stdin);
                 str1[strlen(str1)-1]=0;
 
-                /* Falta codi */
-
+                node_data* n_data;
+                
+                n_data = find_node(tree, str1);
+                
+                printf("%i\n", n_data->num_times);
+                
                 break;
 
             case 5:
