@@ -377,10 +377,9 @@ void saveTree(rb_tree *tree, char *diccionari) {
 
 int buscarParaula(rb_tree *tree, char *paraula)
 {
-
-
-
-    
+    node_data* n_data;
+    n_data = find_node(tree, paraula);
+    return n_data->num_times;
 }
 
 
@@ -504,7 +503,7 @@ int main(int argc, char **argv)
                 }
 
                 do {
-                    opcio2 = menu();
+                    opcio2 = subMenu();
                     printf("\n\n");
 
                     switch(opcio2){
@@ -523,10 +522,7 @@ int main(int argc, char **argv)
                             break;
 
                     } /* switch */
-
-
-
-                } while (opcio != 3);
+                } while (opcio2 != 3);
                 break;
 
             case 5:
