@@ -382,6 +382,35 @@ int buscarParaula(rb_tree *tree, char *paraula)
     return n_data->num_times;
 }
 
+node_data *searchMaxNumDataRecursive(node_data *x)
+{
+    node_data *nodeMax;
+    node_data *nodeTemp;
+
+    nodeMax = x;
+    if (x->right != NIL){
+        nodeTemp =  searchMaxNumDataRecursive(x->right);
+        if (nodeTemp->numTimes > nodeMax->numTimes){
+            nodeMax = numTimes;
+        }
+    }
+    if (x->left != NIL){
+        nodeTemp =  searchMaxNumDataRecursive(x->left);
+        if (nodeTemp->numTimes > nodeMax->numTimes){
+            nodeMax = numTimes;
+        }
+    }
+
+    return nodeMax;
+}
+
+char *searchMaxNumData(rb_tree * tree)
+{
+    node_data *node;
+    node = searchMaxNumDataRecursive(tree->root);
+    return node->key;
+}
+
 
 
 /*
