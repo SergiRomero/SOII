@@ -369,8 +369,26 @@ void saveTree(rb_tree *tree, char *diccionari) {
 
 /*
  * --------------------------------------------------------------------------------
+ *
+ *                      CONSULTES ARBRE
+ *
+ * --------------------------------------------------------------------------------
+ */
+
+int buscarParaula(rb_tree *tree, char *paraula)
+{
+
+
+
+    
+}
+
+
+
+/*
+ * --------------------------------------------------------------------------------
  *                          MENU
- *-------------------------------------------------------------------------------- 
+ * -------------------------------------------------------------------------------- 
  */
 
 int menu() 
@@ -392,11 +410,29 @@ int menu()
     return opcio;
 }
 
+int subMenu() 
+{
+    char str[5];
+    int opcio;
+
+    printf("\n\nQuè vols consultar?\n\n");
+    printf(" 1 - Comptador d'una paraula\n");
+    printf(" 2 - Paraula que apareix més\n");
+    printf(" 3 - Sortir\n\n");
+    printf("   Escull opcio: ");
+
+    fgets(str, 5, stdin);
+    opcio = atoi(str); 
+
+    return opcio;
+}
+
 
 int main(int argc, char **argv)
 {
     char str1[MAXCHAR], str2[MAXCHAR];
-    int opcio;
+    int opcio, opcio2;
+    int numTimes;
     rb_tree *tree;
     
     tree = NULL;
@@ -462,17 +498,35 @@ int main(int argc, char **argv)
                 break;
 
             case 4:
-                
-                printf("Paraula a buscar o polsa enter per saber la paraula que apareix mes vegades: ");
-                fgets(str1, MAXCHAR, stdin);
-                str1[strlen(str1)-1]=0;
+                if(!tree) {
+                    printf("No hi ha cap arbrea memòria\n");
+                    break;
+                }
 
-                node_data* n_data;
-                
-                n_data = find_node(tree, str1);
-                
-                printf("%i\n", n_data->num_times);
-                
+                do {
+                    opcio2 = menu();
+                    printf("\n\n");
+
+                    switch(opcio2){
+                        case 1:
+                            printf("Paraula a buscar: ");
+                            fgets(str1, MAXCHAR, stdin);
+                            str1[strlen(str1)-1]=0;
+
+                            numTimes = buscarParaula(tree, str1);
+                            
+                            printf("La paraula %s apareix %i cops\n", str1, numTimes);
+                            break;
+
+                        case 2:
+
+                            break;
+
+                    } /* switch */
+
+
+
+                } while (opcio != 3);
                 break;
 
             case 5:
