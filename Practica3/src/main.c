@@ -5,6 +5,8 @@
  * This file is an example that uses the red-black-tree.c functions.
  *
  * Lluis Garrido, July 2019.
+ * 
+ * Sergi Romero i Juan Cano
  *
  */
 
@@ -94,8 +96,7 @@ int process_line(char *line, rb_tree *tree)
 
 /**
  *
- *  Main function. This function is an example that shows
- *  how the binary tree works.
+ *  
  *
  */
 
@@ -208,6 +209,11 @@ rb_tree *fillDictionary(char *diccionari, char *baseDades)
  * ---------------------------------------------------------
  */
 
+/*
+ * Funcio que carrega la informacio del diccionari dins de l'arbre. Retorna l'arbre omplert.
+ * 
+ */
+
 rb_tree *loadTree(char *diccionari) {
     
     rb_tree *tree;
@@ -252,14 +258,14 @@ rb_tree *loadTree(char *diccionari) {
             exit(1);
         }
         
-        word = malloc(sizeof(char)*(lenWord + 1)); //Cogemos espacio para el \0
+        word = malloc(sizeof(char)*(lenWord + 1)); //Reservem espai pel \0
         fread(word, sizeof(char)*lenWord, 1, fp);
         word[lenWord] = 0;
         
         fread(&numInstances, sizeof(int), 1, fp);
         if (numInstances < 0){
             printf("Negative word apearence\n");
-            free(word); //Zona de memoria inconexa con el arbol
+            free(word); //Zona de memoria inconexa amb l'arbre
             exit(1);
         }
         
@@ -283,6 +289,10 @@ rb_tree *loadTree(char *diccionari) {
  * -----------------------------------------------------
  */
 
+/*
+ * Funcio que desa l'arbre.
+ * 
+ */
 
 //---------------------- COUNT NODES ----------------------
 
@@ -292,14 +302,14 @@ int countNodesRecursive(node *x)
 
     i = 0;
 
-    //RECORRIDO EN PROFUNDIDAD
+    //Recorregut en profunditat
     if (x->right != NIL)
         i += countNodesRecursive(x->right);
 
     if (x->left != NIL)
         i += countNodesRecursive(x->left);
     
-    //Contamos el nodo
+    //Comptem el node
     i += 1;
 
     return i;
@@ -333,7 +343,7 @@ void saveNodeData(node *x, FILE *fp){
 
 void saveNodeDataRecursive(node *x, FILE *fp) {
 
-    //RECORRIDO EN PROFUNDIDAD
+    //Recorregut en profunditat
     if (x->right != NIL)
         saveNodeDataRecursive(x->right, fp);
 
@@ -382,34 +392,33 @@ int buscarParaula(rb_tree *tree, char *paraula)
     return n_data->num_times;
 }
 
-node_data *searchMaxNumDataRecursive(node_data *x)
+/*
+
+node_data *searchMaxNumDataRecursive(node *n, node_data *maxApareguda)
 {
-    node_data *nodeMax;
-    node_data *nodeTemp;
-
-    nodeMax = x;
-    if (x->right != NIL){
-        nodeTemp =  searchMaxNumDataRecursive(x->right);
-        if (nodeTemp->numTimes > nodeMax->numTimes){
-            nodeMax = numTimes;
-        }
+    if (n == NIL){
+        return maxApareguda;
     }
-    if (x->left != NIL){
-        nodeTemp =  searchMaxNumDataRecursive(x->left);
-        if (nodeTemp->numTimes > nodeMax->numTimes){
-            nodeMax = numTimes;
-        }
+    // primer mirem el fill esquerre
+    maxApareguda = searchMaxNumDataRecursive(n->left, maxApareguda);
+    
+    if (maxApareguda->num_times < n->data->num_times){ //En cas que la nova paraula tingui mes aparicions que la mes apareguda fins ara, actualitzem la variable maxApareguda
+        maxApareguda = n->data;
     }
 
-    return nodeMax;
+    // finalment mirem el fill dret
+    maxApareguda = searchMaxNumDataRecursive(n->right, maxApareguda);
+    
+    return maxApareguda;
 }
-
+*/
+/*
 char *searchMaxNumData(rb_tree * tree)
 {
     node_data *node;
     node = searchMaxNumDataRecursive(tree->root);
     return node->key;
-}
+}*/
 
 
 
@@ -419,6 +428,10 @@ char *searchMaxNumData(rb_tree * tree)
  * -------------------------------------------------------------------------------- 
  */
 
+/*
+ * Funcio que ens mostra el menu amb les diferentes a escollir (crear, emmagatzemar, llegir, consultar informacio de l'arbre, i sortir)
+ * 
+ */
 int menu() 
 {
     char str[5];
@@ -438,6 +451,10 @@ int menu()
     return opcio;
 }
 
+/*
+ * Funcio que ens mostra el submenu, corresponent a l'opcio de consultar informacio de l'arbre. Aquest submenu te les opcions de veure el nombre que apareix una paraula entrada i comprovar la paurala que apareix mes cops.
+ * 
+ */
 int subMenu() 
 {
     char str[5];
@@ -455,6 +472,11 @@ int subMenu()
     return opcio;
 }
 
+/*
+ * --------------------------------------------------------------------------------
+ *                          MAIN
+ * -------------------------------------------------------------------------------- 
+ */
 
 int main(int argc, char **argv)
 {
@@ -472,7 +494,7 @@ int main(int argc, char **argv)
         opcio = menu();
         printf("\n\n");
 
-       /* Feu servir aquest codi com a pantilla */
+       /* Codi sitwch-case agafat com a plantilla */
 
         switch (opcio) {
             case 1:
@@ -497,7 +519,7 @@ int main(int argc, char **argv)
 
             case 2:
                 if(!tree) {
-                    printf("No hi ha cap arbrea memòria\n");
+                    printf("No hi ha cap arbre a memòria\n");
                     break;
                 }
                 
@@ -547,7 +569,12 @@ int main(int argc, char **argv)
                             break;
 
                         case 2:
-
+                            /*
+                            node_data *maxTimes;
+                            maxTimes = malloc(sizeof(node_data));
+                            maxTimes = searchMaxNumDataRecursive(tree->root, node_data *maxApareguda);
+                            printf("La paraula %s apareix %i cops\n", maxTimes->key, maxTimes->num_times);
+                            free(maxTimes)*/
                             break;
 
                     } /* switch */
