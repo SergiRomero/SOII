@@ -392,33 +392,35 @@ int buscarParaula(rb_tree *tree, char *paraula)
     return n_data->num_times;
 }
 
-/*
 
-node_data *searchMaxNumDataRecursive(node *n, node_data *maxApareguda)
+
+node_data *searchMaxNumDataRecursive(node *x)
 {
-    if (n == NIL){
-        return maxApareguda;
+    node_data *nodeMax;
+    node_data *nodeTemp;
+
+    nodeMax = x->data;
+    if (x->right != NIL){
+        nodeTemp =  searchMaxNumDataRecursive(x->right);
+        if (nodeTemp->num_times > nodeMax->num_times){
+            nodeMax = nodeTemp;
+        }
     }
-    // primer mirem el fill esquerre
-    maxApareguda = searchMaxNumDataRecursive(n->left, maxApareguda);
-    
-    if (maxApareguda->num_times < n->data->num_times){ //En cas que la nova paraula tingui mes aparicions que la mes apareguda fins ara, actualitzem la variable maxApareguda
-        maxApareguda = n->data;
+    if (x->left != NIL){
+        nodeTemp =  searchMaxNumDataRecursive(x->left);
+        if (nodeTemp->num_times > nodeMax->num_times){
+            nodeMax = nodeTemp;
+        }
     }
 
-    // finalment mirem el fill dret
-    maxApareguda = searchMaxNumDataRecursive(n->right, maxApareguda);
-    
-    return maxApareguda;
+    return nodeMax;
 }
-*/
-/*
-char *searchMaxNumData(rb_tree * tree)
+
+
+node_data *searchMaxNumData(rb_tree * tree)
 {
-    node_data *node;
-    node = searchMaxNumDataRecursive(tree->root);
-    return node->key;
-}*/
+    return searchMaxNumDataRecursive(tree->root);
+}
 
 
 
@@ -484,6 +486,7 @@ int main(int argc, char **argv)
     int opcio, opcio2;
     int numTimes;
     rb_tree *tree;
+    node_data *maxTimes;
     
     tree = NULL;
     
@@ -569,12 +572,8 @@ int main(int argc, char **argv)
                             break;
 
                         case 2:
-                            /*
-                            node_data *maxTimes;
-                            maxTimes = malloc(sizeof(node_data));
-                            maxTimes = searchMaxNumDataRecursive(tree->root, node_data *maxApareguda);
+                            maxTimes = searchMaxNumData(tree);
                             printf("La paraula %s apareix %i cops\n", maxTimes->key, maxTimes->num_times);
-                            free(maxTimes)*/
                             break;
 
                     } /* switch */
