@@ -2,10 +2,6 @@
 
 # Files to compile
 FILES_C = red-black-tree.c create-tree.c read-write-tree.c consult-tree.c main.c
-# FILES_C = create-tree.c
-
-# Object files
-FILES_O = red-black-tree.o create-tree.o read-write-tree.o consult-tree.o main.o
 
 # Exectuable to generate
 TARGET = main
@@ -19,6 +15,7 @@ LFLAGS = -lm
 # There is no need to change the instructions below this
 # line. Change if you really know what you are doing.
 
+FILES_O = $(subst .c,.o,$(FILES_C))
 
 $(TARGET): $(FILES_O) Makefile
 	gcc $(FILES_O) -o $(TARGET) $(LFLAGS) 
@@ -28,8 +25,5 @@ $(TARGET): $(FILES_O) Makefile
 
 all: $(TARGET) 
 
-prepare:
-	/bin/rm read-write-tree.c consult-tree.c main.c read-write-tree.h consult-tree.h
-
 clean:
-	/bin/rm create-tree.o $(TARGET) 
+	/bin/rm $(FILES_O) $(TARGET) 
