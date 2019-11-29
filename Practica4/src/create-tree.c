@@ -5,6 +5,7 @@
 
 #include "red-black-tree.h"
 #include "tree-to-mmap.h"
+#include "dbfnames-mmap.h"
 
 #define MAXCHAR 100
 
@@ -147,9 +148,10 @@ rb_tree *create_tree(char *fname_dict, char *fname_db)
   FILE *fp_dict, *fp_db;
 
   rb_tree *tree;
-  int i, num_files;
-  char line[MAXCHAR];
+  int i;
+  char *line;
   char *mapped_tree;
+  char *mapped_db;
 
   fp_dict = fopen(fname_dict, "r");
   if (!fp_dict) {
@@ -173,27 +175,24 @@ rb_tree *create_tree(char *fname_dict, char *fname_db)
   index_dictionary_words(tree, fp_dict);
 
   mapped_tree = serialize_node_data_to_mmap(tree);
-  
-  /* Read the number of files the database contains */
-  fgets(line, MAXCHAR, fp_db);
-  num_files = atoi(line);
-  if (num_files <= 0) {
-    printf("Number of files is %d\n", num_files);
-    exit(1);
-  }
+
+  mapped_db = dbfnames_to_mmap(fp_db); //Mapamos la litsa de ficheros a memoria
 
   /* Read database files */
-  for(i = 0; i < num_files; i++) {
-    fgets(line, MAXCHAR, fp_db);
-
-    /* Remove '\n' from line */
-    line[strlen(line)-1] = 0;
+  i = 0;
+  line = get_dbfname_from_mmap(mapped_db, i);
+  do {
+    
     printf("Processing %s\n", line);
 
     /* Process file */
     process_file(tree, line);
-  }
+    
+    i ++;
+    line = get_dbfname_from_mmap(mapped_db, i);
+  } while (line != NULL);
 
+  dbfnames_munmmap(mapped_db);
   deserialize_node_data_from_mmap(tree, mapped_tree);
   
   /* Close files */

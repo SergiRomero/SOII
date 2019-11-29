@@ -1,7 +1,7 @@
 # This is the makefile that generates the executable
 
 # Files to compile
-FILES_C = red-black-tree.c create-tree.c read-write-tree.c consult-tree.c main.c tree-to-mmap.c
+FILES_C = red-black-tree.c create-tree.c read-write-tree.c consult-tree.c main.c tree-to-mmap.c dbfnames-mmap.c
 
 # Exectuable to generate
 TARGET = main
