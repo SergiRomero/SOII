@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <ctype.h> 
 
+#include <sys/wait.h>
+#include <unistd.h>
+
 #include "red-black-tree.h"
 #include "tree-to-mmap.h"
 #include "dbfnames-mmap.h"
@@ -149,6 +152,7 @@ rb_tree *create_tree(char *fname_dict, char *fname_db)
 
   rb_tree *tree;
   int i;
+  int ret;
   char *line;
   char *mapped_tree;
   char *mapped_db;
@@ -179,18 +183,34 @@ rb_tree *create_tree(char *fname_dict, char *fname_db)
   mapped_db = dbfnames_to_mmap(fp_db); //Mapamos la litsa de ficheros a memoria
 
   /* Read database files */
-  i = 0;
-  line = get_dbfname_from_mmap(mapped_db, i);
-  do {
-    
-    printf("Processing %s\n", line);
 
-    /* Process file */
-    process_file(tree, line);
+  //CHILD BORNS
+
+  ret = fork();
+
+  if (ret == 0) {  // fill
+
+	printf("Child on the road\n");
+    i = 0;
+	line = get_dbfname_from_mmap(mapped_db, i);
+	do {
     
-    i ++;
-    line = get_dbfname_from_mmap(mapped_db, i);
-  } while (line != NULL);
+		printf("Processing %s\n", line);
+
+		/* Process file */
+		process_file(tree, line);
+    
+		i ++;
+		line = get_dbfname_from_mmap(mapped_db, i);
+	} while (line != NULL);
+
+	exit(1);
+  } else { // pare
+    printf("FATHER CODE\n");
+	wait(NULL);
+	printf("FINISHED WAIT\n");
+  }
+  printf("LEAVING FATHER\n");
 
   dbfnames_munmmap(mapped_db);
   deserialize_node_data_from_mmap(tree, mapped_tree);
