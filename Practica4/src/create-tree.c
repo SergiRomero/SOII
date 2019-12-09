@@ -6,6 +6,11 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include <semaphore.h>
+#include <errno.h>
+#include <sys/mman.h>
+#include <sys/sysinfo.h>
+
 #include "red-black-tree.h"
 #include "tree-to-mmap.h"
 #include "dbfnames-mmap.h"
