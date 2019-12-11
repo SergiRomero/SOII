@@ -203,7 +203,7 @@ rb_tree *create_tree(char *fname_dict, char *fname_db)
 
   /* Read database files */
   
-  estructura = mmap(NULL, sizeof(shared_mem), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0); //Mapem la estructura a memoria
+  estructura = mmap(NULL, sizeof(shared_mem), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0); //Mapem la estructura dels semafors a memoria
   if (estructura == MAP_FAILED) {
     printf("Map failed. Errno = %d\n", errno);
     exit(1);
@@ -214,6 +214,10 @@ rb_tree *create_tree(char *fname_dict, char *fname_db)
   sem_init(&estructura->sem_write, 1, 1); /* Indiquem que esta compartida entre procesos */
   sem_init(&estructura->sem_read, 1, 1); /* Indiquem que esta compartida entre procesos */
 
+  /* Close files */
+  fclose(fp_dict);
+  fclose(fp_db);
+    
   //CHILD BORNS
   while(i < numProcessadors){ //Creem tants fills com processadors te el sistema
    
@@ -227,15 +231,14 @@ rb_tree *create_tree(char *fname_dict, char *fname_db)
   }    
   
 
-  if (ret == 0) {  // fill
+  if (ret == 0) {  // FILL
 
 	printf("Child on the road\n");
     do {
         
         sem_wait(&estructura->sem_read); //Esperem fins que podem llegir dades
-        
-		//printf("Processing %s\n", line);
         line = get_dbfname_from_mmap(mapped_db, estructura->nFile);
+        //printf("Processing %s   %i  %i\n", line, estructura->nFile, getpid());
         estructura->nFile++;
         sem_post(&estructura->sem_read); //Un cop hem llegit, tornem a habilitar la lectura
         
@@ -250,15 +253,13 @@ rb_tree *create_tree(char *fname_dict, char *fname_db)
 		
 	} while (line != NULL);
     
-    delete_tree_child(tree);//delete tree child metode que nomes esborra la key sense free de data
-    free(tree);
-    /* Close files */
-    fclose(fp_dict);
-    fclose(fp_db);
+    delete_tree_child(tree); //delete tree child metode que nomes esborra la key sense free de data
+    free(tree); //alliberem l'arbre
 	exit(1);
     
-  }
+  } // END FILL
   
+  //FATHER
   for(i = 0; i < numProcessadors; i++){ //El pare fa un wait per cada fill, ja que ha desperar a que tots els fills acabin
     wait(NULL);
   }
@@ -273,9 +274,6 @@ rb_tree *create_tree(char *fname_dict, char *fname_db)
   deserialize_node_data_from_mmap(tree, mapped_tree);//deserialitzem les dades de l'arbre
   munmap(estructura, sizeof(shared_mem)); //deserialitzem el struct
   
-  /* Close files */
-  fclose(fp_dict);
-  fclose(fp_db);
 
   /* Return created tree */
   return tree;

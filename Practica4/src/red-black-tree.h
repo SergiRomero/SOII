@@ -85,5 +85,4 @@ node_data *find_node(rb_tree *tree, char *key);
 void delete_tree(rb_tree *tree);
 void dump_numtimes_words(rb_tree *tree);
 void delete_tree_child(rb_tree *tree);
-void delete_tree_recursive_child(node *x);
 
