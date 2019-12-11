@@ -17,6 +17,14 @@
 
 #define MAXCHAR 100
 
+typedef struct shared_mem{
+  int nFile;
+  sem_t sem_read;
+  sem_t sem_write;
+} shared_mem;
+
+ shared_mem *estructura; //Definim una variable global de tipus struct que conte els 2 semafors i el numero de fitxer pel qual anem
+
 /**
  *
  *  Given a file, insert the words it contains into a tree.  We assume that
@@ -107,9 +115,14 @@ void index_words_line(rb_tree *tree, char *line)
 
       /* Search for the word in the tree */
       n_data = find_node(tree, paraula);
+      
+      sem_wait(&estructura->sem_write); //Abans d'escriure ens esperem fins que ho puguem fer
 
       if (n_data != NULL)
         n_data->num_times++;
+      
+      sem_post(&estructura->sem_write); //Un cop hem escrit, tornem a obrir la escriptura
+      
     }
 
     /* Search for the beginning of a candidate word */
@@ -156,11 +169,12 @@ rb_tree *create_tree(char *fname_dict, char *fname_db)
   FILE *fp_dict, *fp_db;
 
   rb_tree *tree;
-  int i;
+  int i = 0;
   int ret;
   char *line;
   char *mapped_tree;
   char *mapped_db;
+  int numProcessadors = get_nprocs();
 
   fp_dict = fopen(fname_dict, "r");
   if (!fp_dict) {
@@ -183,42 +197,81 @@ rb_tree *create_tree(char *fname_dict, char *fname_db)
   /* Index dictionary words */
   index_dictionary_words(tree, fp_dict);
 
-  mapped_tree = serialize_node_data_to_mmap(tree);
+  mapped_tree = serialize_node_data_to_mmap(tree); //serialitzem les dades de l'arbre
 
-  mapped_db = dbfnames_to_mmap(fp_db); //Mapamos la litsa de ficheros a memoria
+  mapped_db = dbfnames_to_mmap(fp_db); //Mapem la llista de fitxers a memoria
 
   /* Read database files */
+  
+  estructura = mmap(NULL, sizeof(shared_mem), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0); //Mapem la estructura a memoria
+  if (estructura == MAP_FAILED) {
+    printf("Map failed. Errno = %d\n", errno);
+    exit(1);
+  }
+  estructura->nFile = 0;
+  
+  //Inicialitzacio dels semafors
+  sem_init(&estructura->sem_write, 1, 1); /* Indiquem que esta compartida entre procesos */
+  sem_init(&estructura->sem_read, 1, 1); /* Indiquem que esta compartida entre procesos */
 
   //CHILD BORNS
-
-  ret = fork();
+  while(i < numProcessadors){ //Creem tants fills com processadors te el sistema
+   
+    ret = fork(); //Creem un fill
+    i++;
+    
+    if(ret == 0){ //Si es un fill, no ha de crear fills, per tant surt del while
+      break;
+    }  
+    
+  }    
+  
 
   if (ret == 0) {  // fill
 
 	printf("Child on the road\n");
-    i = 0;
-	line = get_dbfname_from_mmap(mapped_db, i);
-	do {
-    
-		printf("Processing %s\n", line);
-
+    do {
+        
+        sem_wait(&estructura->sem_read); //Esperem fins que podem llegir dades
+        
+		//printf("Processing %s\n", line);
+        line = get_dbfname_from_mmap(mapped_db, estructura->nFile);
+        estructura->nFile++;
+        sem_post(&estructura->sem_read); //Un cop hem llegit, tornem a habilitar la lectura
+        
+        if (line == NULL){
+            break;
+        }
+        
 		/* Process file */
 		process_file(tree, line);
-    
+        
 		i ++;
-		line = get_dbfname_from_mmap(mapped_db, i);
+		
 	} while (line != NULL);
-
+    
+    delete_tree_child(tree);//delete tree child metode que nomes esborra la key sense free de data
+    free(tree);
+    /* Close files */
+    fclose(fp_dict);
+    fclose(fp_db);
 	exit(1);
-  } else { // pare
-    printf("FATHER CODE\n");
-	wait(NULL);
-	printf("FINISHED WAIT\n");
+    
   }
+  
+  for(i = 0; i < numProcessadors; i++){ //El pare fa un wait per cada fill, ja que ha desperar a que tots els fills acabin
+    wait(NULL);
+  }
+  
   printf("LEAVING FATHER\n");
+  
+  //Destruccio dels semafors
+  sem_destroy(&estructura->sem_read);
+  sem_destroy(&estructura->sem_write);
 
-  dbfnames_munmmap(mapped_db);
-  deserialize_node_data_from_mmap(tree, mapped_tree);
+  dbfnames_munmmap(mapped_db); //deserialitzem el mapatge del fitxer de la base de dades
+  deserialize_node_data_from_mmap(tree, mapped_tree);//deserialitzem les dades de l'arbre
+  munmap(estructura, sizeof(shared_mem)); //deserialitzem el struct
   
   /* Close files */
   fclose(fp_dict);

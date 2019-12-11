@@ -41,6 +41,12 @@ void free_node_data(node_data *data)
     free(data);
 }
 
+
+void free_node_child(node_data *data)
+{
+    free(data->key);
+}
+
 /**
  *
  * Compares if key1 is less than key2. Should return 1 (true) if condition
@@ -151,6 +157,30 @@ node_data *find_node(rb_tree *tree, char *key) {
     return NULL;
 }
 
+void delete_tree_recursive_child(node *x)
+{
+    if (x->right != NIL)
+        delete_tree_recursive_child(x->right);
+
+    if (x->left != NIL)
+        delete_tree_recursive_child(x->left);
+
+    free_node_child(x->data);
+    free(x);
+}
+
+/**
+ *
+ *  Delete a tree. All the nodes and all the data pointed to by
+ *  the tree is deleted. 
+ *
+ */
+
+void delete_tree_child(rb_tree *tree)
+{
+    if (tree->root != NIL)
+        delete_tree_recursive_child(tree->root);
+}
 
 /** 
  *
