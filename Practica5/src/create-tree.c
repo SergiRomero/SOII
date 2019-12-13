@@ -6,24 +6,23 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include <semaphore.h>
 #include <errno.h>
-#include <sys/mman.h>
 #include <sys/sysinfo.h>
+#include <pthread.h>
 
 #include "red-black-tree.h"
-#include "tree-to-mmap.h"
-#include "dbfnames-mmap.h"
 
 #define MAXCHAR 100
+#define N 1 //NUM THREADS
 
-typedef struct shared_mem{
-  int nFile;
-  sem_t sem_read;
-  sem_t sem_write;
-} shared_mem;
+//VARAIBLES GLOBALS
+rb_tree *tree;
+FILE *fp_db;
+pthread_t ntid[N];
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t  cond  = PTHREAD_COND_INITIALIZER;
 
- shared_mem *estructura; //Definim una variable global de tipus struct que conte els 2 semafors i el numero de fitxer pel qual anem
+
 
 /**
  *
@@ -116,12 +115,8 @@ void index_words_line(rb_tree *tree, char *line)
       /* Search for the word in the tree */
       n_data = find_node(tree, paraula);
       
-      sem_wait(&estructura->sem_write); //Abans d'escriure ens esperem fins que ho puguem fer
-
       if (n_data != NULL)
         n_data->num_times++;
-      
-      sem_post(&estructura->sem_write); //Un cop hem escrit, tornem a obrir la escriptura
       
     }
 
@@ -156,6 +151,38 @@ void process_file(rb_tree *tree, char *fname)
   fclose(fp);
 }
 
+
+void *takeFileFromDataBase()
+{
+  char line[MAXCHAR];
+
+  rb_tree *localTree;
+  localTree = (rb_tree *) malloc(sizeof(rb_tree));
+  *localTree = *tree; //Siempre esta vacia ya que la actualizacion se produce quando no quedan ficheros
+  
+
+  printf("Child on the road\n");
+  do{
+      pthread_mutex_lock(&mutex);
+      fgets(line, MAXCHAR, fp_db);
+      line[strlen(line)-1] = 0;
+      printf("LINE: %s\n", line);
+      /* Process file */
+      process_file(localTree, line);
+      pthread_mutex_unlock(&mutex);
+      
+  }while(line!= NULL);
+    
+    //critica arbre
+      *tree = *localTree;
+    //fi critica arbre
+
+    free(localTree); //alliberem l'arbre
+	  
+    return ((void *)0);
+}
+
+
 /**
  *
  *  Construct the tree given a dictionary file and a 
@@ -166,14 +193,12 @@ void process_file(rb_tree *tree, char *fname)
 
 rb_tree *create_tree(char *fname_dict, char *fname_db)
 {
-  FILE *fp_dict, *fp_db;
+  FILE *fp_dict;
 
-  rb_tree *tree;
   int i = 0;
-  int ret;
-  char *line;
-  char *mapped_tree;
-  char *mapped_db;
+  int err;
+  char line[MAXCHAR];
+  int num_files;
   int numProcessadors = get_nprocs();
 
   fp_dict = fopen(fname_dict, "r");
@@ -194,86 +219,44 @@ rb_tree *create_tree(char *fname_dict, char *fname_db)
   /* Initialize the tree */
   init_tree(tree);
 
-  /* Index dictionary words */
+  /* Index dictionary words in shared tree*/
   index_dictionary_words(tree, fp_dict);
-
-  mapped_tree = serialize_node_data_to_mmap(tree); //serialitzem les dades de l'arbre
-
-  mapped_db = dbfnames_to_mmap(fp_db); //Mapem la llista de fitxers a memoria
-
-  /* Read database files */
   
-  estructura = mmap(NULL, sizeof(shared_mem), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0); //Mapem la estructura dels semafors a memoria
-  if (estructura == MAP_FAILED) {
-    printf("Map failed. Errno = %d\n", errno);
+
+  /* Read the number of files the database contains */
+  fgets(line, MAXCHAR, fp_db);
+  num_files = atoi(line);
+  if (num_files <= 0) {
+    printf("Number of files is %d\n", num_files);
     exit(1);
   }
-  estructura->nFile = 0;
-  
-  //Inicialitzacio dels semafors
-  sem_init(&estructura->sem_write, 1, 1); /* Indiquem que esta compartida entre procesos */
-  sem_init(&estructura->sem_read, 1, 1); /* Indiquem que esta compartida entre procesos */
 
-  /* Close files */
-  fclose(fp_dict);
-  fclose(fp_db);
-    
-  //CHILD BORNS
-  while(i < numProcessadors){ //Creem tants fills com processadors te el sistema
-   
-    ret = fork(); //Creem un fill
-    i++;
-    
-    if(ret == 0){ //Si es un fill, no ha de crear fills, per tant surt del while
-      break;
-    }  
-    
-  }    
-  
+  pthread_mutex_init(&mutex, NULL); 
 
-  if (ret == 0) {  // FILL
-
-	printf("Child on the road\n");
-    do {
-        
-        sem_wait(&estructura->sem_read); //Esperem fins que podem llegir dades
-        line = get_dbfname_from_mmap(mapped_db, estructura->nFile);
-        //printf("Processing %s   %i  %i\n", line, estructura->nFile, getpid());
-        estructura->nFile++;
-        sem_post(&estructura->sem_read); //Un cop hem llegit, tornem a habilitar la lectura
-        
-        if (line == NULL){
-            break;
-        }
-        
-		/* Process file */
-		process_file(tree, line);
-        
-		i ++;
-		
-	} while (line != NULL);
-    
-    delete_tree_child(tree); //delete tree child metode que nomes esborra la key sense free de data
-    free(tree); //alliberem l'arbre
-	exit(1);
-    
-  } // END FILL
+  for(i = 0; i < numProcessadors; i++) {
+      //Creem fil secondari
+      err = pthread_create(ntid + i, NULL, takeFileFromDataBase, NULL);
+      if (err != 0) {
+        printf("no puc crear el fil numero %d.", i);
+        exit(1);
+      }
+  }
   
   //FATHER
-  for(i = 0; i < numProcessadors; i++){ //El pare fa un wait per cada fill, ja que ha desperar a que tots els fills acabin
-    wait(NULL);
+  for(i = 0; i < numProcessadors; i++){ ///El pare espera a que els fils finalitzin
+    err = pthread_join(ntid[i], NULL);
+    if (err != 0) {
+      printf("error pthread_join al fil %d\n", i);
+      exit(1);
+    }
   }
   
   printf("LEAVING FATHER\n");
-  
-  //Destruccio dels semafors
-  sem_destroy(&estructura->sem_read);
-  sem_destroy(&estructura->sem_write);
 
-  dbfnames_munmmap(mapped_db); //deserialitzem el mapatge del fitxer de la base de dades
-  deserialize_node_data_from_mmap(tree, mapped_tree);//deserialitzem les dades de l'arbre
-  munmap(estructura, sizeof(shared_mem)); //deserialitzem el struct
-  
+  /* Close files */
+    fclose(fp_dict);
+    fclose(fp_db);
+
 
   /* Return created tree */
   return tree;
