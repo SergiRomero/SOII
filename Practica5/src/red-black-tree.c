@@ -33,39 +33,41 @@ void copyTreeRecursive(node *original, node *copia) {
         copia->left=NIL;
     }
     else{
-        node *x;
-        x = malloc(sizeof(node));
-        copia->left=x; // Creem una copia del node esquerra
-        copyTreeRecursive(original->left, copia->left);
+        node *left_copia;
+        left_copia = malloc(sizeof(node)); //Reservem espai pel node copia
+        copia->left = left_copia;
+        copyTreeRecursive(original->left, copia->left); //Seguim pel node->left de cada arbre
     }
     
-    /*Copiem el node_data de dins el node i tota la informacio necessaria (key i num_times)*/
-    node_data *copia_nodedata=malloc(sizeof(node_data));
-    copia_nodedata->num_times=original->data->num_times; // tambe podriem fer original->data->num_times;
-    
-    //la clau no cal copiar-la en un nou espai de memoria perque nomes la llegim
-    copia_nodedata->key=original->data->key;
-    copia->data=copia_nodedata;
+    //COPIEM LA INFROMACIÓ DEL NODE
+    node_data *copia_nodedata = malloc(sizeof(node_data));
+    copia_nodedata->num_times = original->data->num_times;
+    copia_nodedata->key = original->data->key;
+    copia->data = copia_nodedata;
     
     
     if (original->right== NIL){
         copia->right=NIL;
     }
     else{
-        node *y;
-        y = malloc(sizeof(node));
-        copia->right=y; //Creem una copia del node dret
-        copyTreeRecursive(original->right, copia->right);
+        node *right_copia;
+        right_copia = malloc(sizeof(node)); //Reservem espai pel node copia
+        copia->right = right_copia;
+        copyTreeRecursive(original->right, copia->right); //Seguim pel node->right de cada arbre
     }
 }
 
+/**
+ * Donats dos arbres, copia el contingut del primer sobre el segon
+ */
+
 void copyTree(rb_tree *orgTree, rb_tree *copia){
     init_tree(copia);
-    if(orgTree !=NULL){
+    if(orgTree != NULL){
         node *x;
         x = malloc(sizeof(node));
-        copia->root=x; //Creem una copia del node arrel
-        copyTreeRecursive(orgTree->root, copia->root); //Cridem a la funcio recursiva que vagi copiant els nodes de l'arbre
+        copia->root = x; //Creem una copia del node arrel
+        copyTreeRecursive(orgTree->root, copia->root); //Copiem recursivament tots els nodes
         
     }
 }
@@ -77,14 +79,18 @@ void updateTreeRecursive(node *copia, node *original) {
         updateTreeRecursive(copia->left, original->left);
     }
     
-    //Actualitzem la variable num_times
-    original->data->num_times+=copia->data->num_times;
+    //Actualitzem unicament el nombre d'aparicions
+    original->data->num_times += copia->data->num_times;
     
     
     if (copia->right!= NIL){
         updateTreeRecursive(copia->right, original->right);
     }
 }
+
+/**
+ * Donats dos arbres, augmenta el nombre d'aparicions de paraules del primer, sumant-li les del segon
+ */
 
 void updateTree(rb_tree *copia, rb_tree *orgTree){
     

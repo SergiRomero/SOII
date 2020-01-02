@@ -161,20 +161,20 @@ void *takeFileFromDataBase()
   char line[MAXCHAR];
 
   rb_tree *localTree;
-  localTree = (rb_tree *) malloc(sizeof(rb_tree));
-  copyTree(tree, localTree); //Siempre esta vacia ya que la actualizacion se produce quando no quedan ficheros
+  localTree = (rb_tree *) malloc(sizeof(rb_tree)); //Reservem espai per a l'arbre local
+  copyTree(tree, localTree); //Hacemos una copia del arbol global
   
 
-  printf("Child on the road\n");
+  printf("Child on the road\n"); //MARCA QUE UN FIL HA COMENÇAT A EXECUTAR-SE
   
-  pthread_mutex_lock(&mutex);
+  pthread_mutex_lock(&mutex); //LOCK MUTEX
   while(file_index < num_files){
     
-      file_index+=1;
-      
-    fgets(line, MAXCHAR, fp_db);
-    /*final zona critica*/
-    pthread_mutex_unlock(&mutex);
+    file_index+=1;
+    fgets(line, MAXCHAR, fp_db); //Agafem el seguent fitxer
+    
+    
+    pthread_mutex_unlock(&mutex); //UNLOCK MUTEX
     
     line[strlen(line)-1]=0;
     
@@ -182,16 +182,16 @@ void *takeFileFromDataBase()
         break;
     }
     
-      /* Process file */
+    //Processem el fitxer
     printf("Processing %s\n", line);
     process_file(localTree, line);
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&mutex); //LOCK MUTEX
   }
-  pthread_mutex_unlock(&mutex);
+  pthread_mutex_unlock(&mutex);//UNLOCK MUTEX
   
     
       pthread_mutex_lock(&mutex2);
-      updateTree(localTree, tree); //UPADATE TREE
+      updateTree(localTree, tree); //UPADATE TREE (ZONA CRITICA)
       pthread_mutex_unlock(&mutex2);
 
     delete_tree_child(localTree);
@@ -273,9 +273,9 @@ rb_tree *create_tree(char *fname_dict, char *fname_db)
   
   printf("LEAVING FATHER\n");
 
-  /* Close files */
-    fclose(fp_dict);
-    fclose(fp_db);
+  /* Close files and monitors */
+  fclose(fp_dict);
+  fclose(fp_db);
   pthread_mutex_destroy(&mutex);
   pthread_mutex_destroy(&mutex2);
 
