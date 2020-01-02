@@ -194,6 +194,7 @@ void *takeFileFromDataBase()
       updateTree(localTree, tree); //UPADATE TREE
       pthread_mutex_unlock(&mutex2);
 
+    delete_tree_child(localTree);
     free(localTree); //alliberem l'arbre
 	  
     return ((void *)0);

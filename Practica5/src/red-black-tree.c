@@ -112,7 +112,7 @@ void free_node_data(node_data *data)
 
 void free_node_child(node_data *data)
 {
-    free(data->key);
+    free(data);
 }
 
 /**
