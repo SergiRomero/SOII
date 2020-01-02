@@ -7,7 +7,7 @@ FILES_C = red-black-tree.c create-tree.c read-write-tree.c consult-tree.c tree-t
 TARGET = main
 
 # Compilation options
-CFLAGS = -Wall -Werror -g
+CFLAGS = -Wall -Werror -g -fPIC
 
 # Linker options 
 LFLAGS = -lm -lpthread

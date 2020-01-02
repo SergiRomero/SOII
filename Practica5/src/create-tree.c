@@ -13,14 +13,18 @@
 #include "red-black-tree.h"
 
 #define MAXCHAR 100
-#define N 1 //NUM THREADS
+#define N 10 //NUM THREADS
 
 //VARAIBLES GLOBALS
 rb_tree *tree;
 FILE *fp_db;
+
+int num_files;
+int file_index;
+
 pthread_t ntid[N];
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t  cond  = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutex;
+pthread_mutex_t mutex2;
 
 
 
@@ -158,24 +162,37 @@ void *takeFileFromDataBase()
 
   rb_tree *localTree;
   localTree = (rb_tree *) malloc(sizeof(rb_tree));
-  *localTree = *tree; //Siempre esta vacia ya que la actualizacion se produce quando no quedan ficheros
+  copyTree(tree, localTree); //Siempre esta vacia ya que la actualizacion se produce quando no quedan ficheros
   
 
   printf("Child on the road\n");
-  do{
-      pthread_mutex_lock(&mutex);
-      fgets(line, MAXCHAR, fp_db);
-      line[strlen(line)-1] = 0;
-      printf("LINE: %s\n", line);
-      /* Process file */
-      process_file(localTree, line);
-      pthread_mutex_unlock(&mutex);
-      
-  }while(line!= NULL);
+  
+  pthread_mutex_lock(&mutex);
+  while(file_index < num_files){
     
-    //critica arbre
-      *tree = *localTree;
-    //fi critica arbre
+      file_index+=1;
+      
+    fgets(line, MAXCHAR, fp_db);
+    /*final zona critica*/
+    pthread_mutex_unlock(&mutex);
+    
+    line[strlen(line)-1]=0;
+    
+    if(line==NULL){
+        break;
+    }
+    
+      /* Process file */
+    printf("Processing %s\n", line);
+    process_file(localTree, line);
+    pthread_mutex_lock(&mutex);
+  }
+  pthread_mutex_unlock(&mutex);
+  
+    
+      pthread_mutex_lock(&mutex2);
+      updateTree(localTree, tree); //UPADATE TREE
+      pthread_mutex_unlock(&mutex2);
 
     free(localTree); //alliberem l'arbre
 	  
@@ -198,9 +215,10 @@ rb_tree *create_tree(char *fname_dict, char *fname_db)
   int i = 0;
   int err;
   char line[MAXCHAR];
-  int num_files;
   int numProcessadors = get_nprocs();
 
+  file_index = 0;
+  
   fp_dict = fopen(fname_dict, "r");
   if (!fp_dict) {
     printf("Could not open dictionary file %s\n", fname_dict);
@@ -232,6 +250,7 @@ rb_tree *create_tree(char *fname_dict, char *fname_db)
   }
 
   pthread_mutex_init(&mutex, NULL); 
+  pthread_mutex_init(&mutex2, NULL); 
 
   for(i = 0; i < numProcessadors; i++) {
       //Creem fil secondari
@@ -256,6 +275,8 @@ rb_tree *create_tree(char *fname_dict, char *fname_db)
   /* Close files */
     fclose(fp_dict);
     fclose(fp_db);
+  pthread_mutex_destroy(&mutex);
+  pthread_mutex_destroy(&mutex2);
 
 
   /* Return created tree */
